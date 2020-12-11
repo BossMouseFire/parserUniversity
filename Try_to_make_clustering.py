@@ -28,20 +28,19 @@ def sheetdecoration():
     secondlist['D1'] = "Количество совпадений"
     secondlist['E1'] = "Список совпавших слов"
     secondlist['F1'] = "Список возможных совпадений"
-    secondlist['I1'] = "Количество возможных совпадений"
+    secondlist['H1'] = "Количество возможных совпадений"
 
     secondlist['B2'] = "ResearchGate"
     secondlist['C2'] = "Elibrary"
     secondlist['F2'] = "ResearchGate"
     secondlist['G2'] = "Elibrary"
-    secondlist['H2'] = "Root"
 
     secondlist.merge_cells('B1:C1')
-    secondlist.merge_cells('F1:H1')
+    secondlist.merge_cells('F1:G1')
     secondlist.merge_cells('A1:A2')
     secondlist.merge_cells('D1:D2')
     secondlist.merge_cells('E1:E2')
-    secondlist.merge_cells('I1:I2')
+    secondlist.merge_cells('H1:H2')
 
 
     row_cells = 1
@@ -64,11 +63,19 @@ with open("profiles_elibrary.json", "r", encoding="utf8") as file:
 
 Sovpadenia = 0
 PossibleSovpadenia = 0
-amountoffullsovpad = {}
-goodsovpad = {}
+amountoffullsovpad = {}  # количество полных совпадений
+goodsovpad = {}  # количество хороших совпадений (2 корня)
+columsADEH = 3
 # "Умное" сравнивание
 NotFindNamesSum = 0
 NotFindNamesSum2 = 0
+
+amountofwordsResearch = []
+amountofwordsResearchfindinElibrary = []
+for NameElibrary in dataElibrary:
+    amountofwordsResearch[NameElibrary] = len(dataElibrary[NameElibrary])  # количество ключевых слов на Research у человека (всего)
+
+
 for NameElibrary in dataElibrary:  # начинаем поиск с elibrary
     NotFindName = True
     for NameResearch in dataResearch:  # ищем совпадающее имя на research
