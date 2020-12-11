@@ -2,3 +2,4 @@
 geckodriver.log
 geckodriver
 profiles_href.json
+__pycache__
