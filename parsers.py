@@ -245,3 +245,11 @@ with open("profiles_elibrary.json", 'r', encoding="utf8") as file:
 
 with open("profiles_researchgate.json", 'r', encoding="utf8") as file:
     test2 = json.load(file)
+
+n = 0
+
+for i in test2:
+    for j in test1:
+        if i == j:
+            n += 1
+print(n)

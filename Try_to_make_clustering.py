@@ -1,13 +1,12 @@
 import json
-from openpyxl import load_workbook
 import openpyxl
 
 
-FILEname = "C:/Users/Дмитрий/Desktop/University education/OLIMP/Python/TOI Individual Task/Statistic information Test.xlsx"
+FILEname = "/Users/danil/PycharmProjects/skills_university/Statistic information Test.xlsx"
 
 try:
     wb = openpyxl.load_workbook(FILEname)
-except:
+except Exception as error:
     wb = openpyxl.Workbook()
 
     # Удаление листа, создаваемого по умолчанию, при создании документа
@@ -18,10 +17,16 @@ except:
     secondlist = wb.create_sheet('Full Statistics')
 firstlist = wb.get_sheet_by_name('Statistics')
 secondlist = wb.get_sheet_by_name('Full Statistics')
+
+
 def sheetdecoration():
     firstlist['A1'] = "Фамилия Имя ученого"
-    firstlist['B1'] = "Количество совпадений"
-    firstlist['C1'] = "Количество возможных совпадений"
+    firstlist['B1'] = "Количество ключевых слов на reseachgate"
+    firstlist['C1'] = "Количество ключевых слов на elibrary"
+    firstlist['D1'] = "Количество полных совпадений"
+    firstlist['E1'] = "Количество хороших совпадений"
+    firstlist['F1'] = "Количество возможных совпадений"
+    firstlist['G1'] = "Вывод"
 
     secondlist['A1'] = "Фамилия Имя ученого"
     secondlist['B1'] = "Список ключевых слов"
@@ -41,8 +46,6 @@ def sheetdecoration():
     secondlist.merge_cells('D1:D2')
     secondlist.merge_cells('E1:E2')
     secondlist.merge_cells('H1:H2')
-
-
     row_cells = 1
     while row_cells < 169:
         firstlist.row_dimensions[row_cells].height = 15
@@ -52,9 +55,9 @@ def sheetdecoration():
         firstlist.column_dimensions[chr(column_cells)].width = 40
         secondlist.column_dimensions[chr(column_cells)].width = 30
         column_cells += 1
-sheetdecoration()
 
-wb.save(FILEname)
+
+sheetdecoration()
 
 with open("profiles_researchgate.json", "r", encoding="utf8") as file:
     dataElibrary = json.load(file)
@@ -63,21 +66,31 @@ with open("profiles_elibrary.json", "r", encoding="utf8") as file:
 
 Sovpadenia = 0
 PossibleSovpadenia = 0
+PossibleSovpadeniaHuman = 0
 amountoffullsovpad = {}  # количество полных совпадений
 goodsovpad = {}  # количество хороших совпадений (2 корня)
+anysovpad = {}  # количество возможных совпадений
 columsADEH = 3
 # "Умное" сравнивание
 NotFindNamesSum = 0
 NotFindNamesSum2 = 0
+row_number_name = 2
 
-amountofwordsResearch = []
-amountofwordsResearchfindinElibrary = []
-for NameElibrary in dataElibrary:
-    amountofwordsResearch[NameElibrary] = len(dataElibrary[NameElibrary])  # количество ключевых слов на Research у человека (всего)
-
+# группы
+average = 0
+one_group = 0
+two_group = 0
+three_group = 0
+four_group = 0
 
 for NameElibrary in dataElibrary:  # начинаем поиск с elibrary
     NotFindName = True
+    firstlist.cell(row=row_number_name, column=1).value = NameElibrary
+    firstlist.cell(row=row_number_name, column=2).value = len(dataElibrary[NameElibrary])
+    try:
+        firstlist.cell(row=row_number_name, column=3).value = len(dataResearch[NameElibrary])
+    except KeyError:
+        firstlist.cell(row=row_number_name, column=3).value = "Имя не найдено"
     for NameResearch in dataResearch:  # ищем совпадающее имя на research
         if NameElibrary == NameResearch:  # имя нашлось
             NotFindName = False
@@ -163,11 +176,52 @@ for NameElibrary in dataElibrary:  # начинаем поиск с elibrary
                                 print('\n')
                     if FINDPOSSIBLE:
                         PossibleSovpadenia += 1
+    try:
+        firstlist.cell(row=row_number_name, column=4).value = amountoffullsovpad[NameElibrary]
+    except KeyError:
+        firstlist.cell(row=row_number_name, column=4).value = 0
+        amountoffullsovpad.update({
+            NameElibrary: 0
+        })
+    try:
+        firstlist.cell(row=row_number_name, column=5).value = goodsovpad[NameElibrary]
+    except KeyError:
+        firstlist.cell(row=row_number_name, column=5).value = 0
+        goodsovpad.update({
+            NameElibrary: 0
+        })
+    numAnySov = PossibleSovpadenia - PossibleSovpadeniaHuman
+    anysovpad.update({
+        NameElibrary: numAnySov
+    })
+    PossibleSovpadeniaHuman = PossibleSovpadenia
+    firstlist.cell(row=row_number_name, column=6).value = anysovpad[NameElibrary]
+    try:
+        quality = (amountoffullsovpad[NameElibrary] + goodsovpad[NameElibrary] * 0.25 +
+                   anysovpad[NameElibrary] * 0.1) * 100 / \
+                  (len(dataElibrary[NameElibrary]) + amountoffullsovpad[NameElibrary])
+        average += quality
+        if quality > 50:
+            one_group += 1
+        elif quality > 40:
+            two_group += 1
+        elif quality > 25:
+            three_group += 1
+        else:
+            four_group += 1
+        firstlist.cell(row=row_number_name, column=7).value = f'Процент совпадения elibrary c ' \
+            f'researchgate равен {round(quality, 2)}%.'
+    except ZeroDivisionError:
+        firstlist.cell(row=row_number_name, column=7).value = "Машинное обучение не определило ключевые слова"
     if NotFindName:
         NotFindNamesSum += 1
         print(NameElibrary + "   NOT FIND NAME")
     else:
         NotFindNamesSum2 += 1
+    row_number_name += 1
+
+
+wb.save(FILEname)
 
 
 print('Количество ненайденных имен: ' + str(NotFindNamesSum))
@@ -177,4 +231,5 @@ print('Возможные совпадения слов: ' + str(PossibleSovpade
 print('\n')
 print("Количество полных совпадений у ученых: " + str(amountoffullsovpad))
 print("Количество хороших совпадений у ученых (у ключевых слов обнаружено совпадение двух и более подслов): " + str(goodsovpad))
-
+print('Среднее', average / 110)
+print(one_group, two_group, three_group, four_group)
