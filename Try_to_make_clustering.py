@@ -1,5 +1,4 @@
 import json
-from openpyxl import load_workbook
 import openpyxl
 
 
@@ -70,10 +69,7 @@ columsADEH = 3
 NotFindNamesSum = 0
 NotFindNamesSum2 = 0
 
-amountofwordsResearch = []
-amountofwordsResearchfindinElibrary = []
-for NameElibrary in dataElibrary:
-    amountofwordsResearch[NameElibrary] = len(dataElibrary[NameElibrary])  # количество ключевых слов на Research у человека (всего)
+
 
 
 for NameElibrary in dataElibrary:  # начинаем поиск с elibrary
