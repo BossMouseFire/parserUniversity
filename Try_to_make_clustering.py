@@ -17,15 +17,18 @@ except Exception as error:
     # создание листов по умолчанию
     titlelist = wb.create_sheet('Title')
     firstlist = wb.create_sheet('Statistics')
-    secondlist = wb.create_sheet('Full Statistics')
+    #secondlist = wb.create_sheet('Full Statistics')
+    grouplist = wb.create_sheet('Groups of scientists')
 titlelist = wb.get_sheet_by_name('Title')
 firstlist = wb.get_sheet_by_name('Statistics')
-secondlist = wb.get_sheet_by_name('Full Statistics')
+#secondlist = wb.get_sheet_by_name('Full Statistics')
+grouplist = wb.get_sheet_by_name('Groups of scientists')
 
 # оформление листа
 class sheetdecoration():
     def preparetitlelist(self):
         titlelist['A1'] = "Анализ работы искусственного интеллекта сайта ResearchGate по определению ключевых слов на других источниках (Elibrary)"
+        titlelist.cell(1, 1).alignment = Alignment(horizontal='center')
         titlelist['A4'] = "Работу выполнили: Абанин Д. А., Ильбеков Д. С."
         titlelist['A7'] = "Примечание"
         titlelist['A8'] = """Коэффицент совпадения(k) - это процент сопоставимости ключевых слов из Researchgate с Elibrary. Коэффициент совпадения расчитывается следующим образом: (a+b+c)/n*100%, где:
@@ -35,14 +38,23 @@ c - количество возможных совпадений (возможн
 Показатели a, b, c относятся к одному человеку
 n - количество ключевых слов на сайте research у конкретного человека.
 """
+        titlelist['A9'] = """В результате проделанной работы мы смогли сгруппировать всех преподавателей на 4 класса:
+1 класс (k > 50) - показывает, что ИИ отлично справился со своей задачей. Количество человек - 4.
+2 класс (40 < k <= 50) - показывает, что ИИ хорошо справился со своей задачей. Количество человек - 5.
+3 класс (25 < k <= 40) - показывает, что ИИ удовлетворительно справился со своей задачей. Количество человек - 19.
+4 класс ( k <= 25) - показывает, что ИИ плохо справился со своей задачей. Количество человек - 99.
+Средний коэффицент совпадения - 13.6%
+"""
         titlelist['A10'] = "Вывод"
         titlelist['A11'] = """В результате проделанной работы мы пришли к определенным выводам. Т.к. средний коэффицент совпадения довольно низок, можно заключить, что искусственный интелект сайта ResearchGate плохо распознает ключевые слова по предложенным статьям. Но можно предположить, что часть данных на сайте Elibrary не соответствуют действительности, потому что на одно и тоже ключевое слово может приходиться до 200 различных понятий, которые сильно связаны по смыслу. 
 """
         titlelist.column_dimensions['A'].width = 150
-        titlelist.row_dimensions[8].height = 100
+        titlelist.row_dimensions[8].height = 170
+        titlelist.row_dimensions[8].height = 150
         # Добавление возможности переноса строк, если закончилась ширина столбца
         wrap_alignment = Alignment(wrap_text=True)
         titlelist['A8'].alignment = wrap_alignment
+        titlelist['A9'].alignment = wrap_alignment
         titlelist['A11'].alignment = wrap_alignment
         # Изменение размера текста
         titlelist['A1'].font = Font(30)
@@ -96,9 +108,34 @@ n - количество ключевых слов на сайте research у �
         while column_cells < 75:
             secondlist.column_dimensions[chr(column_cells)].width = 30
             column_cells += 1
+
+    def preparegroupslist(self):
+        grouplist.merge_cells('A1:D1')
+        grouplist['A1'] = "Группы ученых"
+        grouplist.cell(1, 1).alignment = Alignment(horizontal='center')
+        temp_column_cells = 1
+        while temp_column_cells < 5:
+            grouplist.cell(2, temp_column_cells).alignment = Alignment(horizontal='center')
+            temp_column_cells += 1
+        grouplist['A2'] = "1 группа (k > 50%)"
+        grouplist['B2'] = "2 группа (50% >= k > 40%)"
+        grouplist['C2'] = "3 группа (40% >= k > 25%)"
+        grouplist['D2'] = "4 группа (k <= 25%)"
+        row_cells = 1
+        while row_cells < 100:
+            if row_cells == 1 or row_cells == 2:
+                grouplist.row_dimensions[row_cells].height = 20
+            else:
+                grouplist.row_dimensions[row_cells].height = 15
+            row_cells += 1
+        column_cells = 65
+        while column_cells < 69:
+            grouplist.column_dimensions[chr(column_cells)].width = 50
+            column_cells += 1
 sheetdecoration().preparetitlelist()
 sheetdecoration().preparefirstlist()
-sheetdecoration().preparesecondlist()
+#sheetdecoration().preparesecondlist()
+sheetdecoration().preparegroupslist()
 
 # считывание данных парсера Researchgate и Elibrary
 with open("profiles_researchgate.json", "r", encoding="utf8") as file:
@@ -123,7 +160,10 @@ one_group = 0
 two_group = 0
 three_group = 0
 four_group = 0
-
+first_group = []
+second_group = []
+third_group = []
+fourth_group = []
 # Алгоритм поиска слов
 for NameResearch in dataResearch:  # начинаем поиск человека из Research в Elibrary
     NotFindName = True  # Переменная "Найден ли человек?"
@@ -248,14 +288,22 @@ for NameResearch in dataResearch:  # начинаем поиск человек�
                    anysovpad[NameResearch] * 0.1) * 100 / \
                   (len(dataResearch[NameResearch]) + amountoffullsovpad[NameResearch])
         average += quality
-        if quality > 50:
+        if quality > 50:  # Первая группа
+            grouplist.cell(row=3+one_group, column=1).value = NameResearch
             one_group += 1
-        elif quality > 40:
+            first_group.append(NameResearch)
+        elif quality > 40:  # Вторая группа
+            grouplist.cell(row=3+two_group, column=2).value = NameResearch
             two_group += 1
-        elif quality > 25:
+            second_group.append(NameResearch)
+        elif quality > 25:  # Третья группа
+            grouplist.cell(row=3 + three_group, column=3).value = NameResearch
             three_group += 1
-        else:
+            third_group.append(NameResearch)
+        else:  # Четвертая группа
+            grouplist.cell(row=3 + four_group, column=4).value = NameResearch
             four_group += 1
+            fourth_group.append(NameResearch)
         firstlist.cell(row=row_number_name, column=7).value = f'Процент совпадения elibrary c ' \
             f'researchgate равен {round(quality, 2)}%.'
     except ZeroDivisionError:
@@ -284,6 +332,10 @@ print("Количество возможных совпадений у учен�
 print()
 print('Средний коэффицент совпадения: ', average / FindNamesSum)
 print("Количество человек в 1 группе: " + str(one_group))
+print(first_group)
 print("Количество человек в 2 группе: " + str(two_group))
+print(second_group)
 print("Количество человек в 3 группе: " + str(three_group))
+print(third_group)
 print("Количество человек в 4 группе: " + str(four_group))
+print(fourth_group)
